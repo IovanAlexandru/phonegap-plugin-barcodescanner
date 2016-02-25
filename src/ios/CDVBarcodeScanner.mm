@@ -61,7 +61,6 @@
 @property (nonatomic, retain) UIViewController*           parentViewController;
 @property (nonatomic, retain) CDVbcsViewController*        viewController;
 @property (nonatomic, retain) AVCaptureSession*           captureSession;
-@property (nonatomic, retain) AVCaptureDevice*            captureDevice;
 @property (nonatomic, retain) AVCaptureVideoPreviewLayer* previewLayer;
 @property (nonatomic, retain) NSString*                   alternateXib;
 @property (nonatomic, retain) NSMutableArray*             results;
