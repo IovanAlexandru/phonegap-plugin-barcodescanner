@@ -61,13 +61,14 @@
 @property (nonatomic, retain) UIViewController*           parentViewController;
 @property (nonatomic, retain) CDVbcsViewController*        viewController;
 @property (nonatomic, retain) AVCaptureSession*           captureSession;
+@property (nonatomic, retain) AVCaptureDevice*            captureDevice;
 @property (nonatomic, retain) AVCaptureVideoPreviewLayer* previewLayer;
 @property (nonatomic, retain) NSString*                   alternateXib;
 @property (nonatomic, retain) NSMutableArray*             results;
 @property (nonatomic)         BOOL                        is1D;
 @property (nonatomic)         BOOL                        is2D;
 @property (nonatomic)         BOOL                        capturing;
-@property (nonatomic)         BOOL                        isFrontCamera;
+@property (nonatomic)         BOOL                        hasFlash;
 @property (nonatomic)         BOOL                        isFlipped;
 
 
@@ -386,12 +387,22 @@ parentViewController:(UIViewController*)parentViewController
 }
 
 
-- (void)flipCamera
+- (void)flipFlash
 {
     self.isFlipped = YES;
-    self.isFrontCamera = !self.isFrontCamera;
-    [self performSelector:@selector(barcodeScanCancelled) withObject:nil afterDelay:0];
-    [self performSelector:@selector(scanBarcode) withObject:nil afterDelay:0.1];
+    self.hasFlash = !self.hasFlash;
+    
+    AVCaptureDevice* __block device = nil;
+    device = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
+    if(device){
+        [device lockForConfiguration:nil];
+        if(self.hasFlash) {
+            [device setTorchMode:(AVCaptureTorchModeOn)];
+        } else {
+            [device setTorchMode:(AVCaptureTorchModeOff)];
+        }
+        [device unlockForConfiguration];
+    }
 }
 
 //--------------------------------------------------------------------------
@@ -402,20 +413,8 @@ parentViewController:(UIViewController*)parentViewController
     self.captureSession = captureSession;
     
     AVCaptureDevice* __block device = nil;
-    if (self.isFrontCamera) {
-        
-        NSArray* devices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
-        [devices enumerateObjectsUsingBlock:^(AVCaptureDevice *obj, NSUInteger idx, BOOL *stop) {
-            if (obj.position == AVCaptureDevicePositionFront) {
-                device = obj;
-            }
-        }];
-    } else {
-        device = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
-        if (!device) return @"unable to obtain video capture device";
-        
-    }
-    
+    device = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
+    if (!device) return @"unable to obtain video capture device";
     
     AVCaptureDeviceInput* input = [AVCaptureDeviceInput deviceInputWithDevice:device error:&error];
     if (!input) return @"unable to obtain video capture device input";
@@ -872,9 +871,9 @@ parentViewController:(UIViewController*)parentViewController
     [self.processor performSelector:@selector(barcodeScanCancelled) withObject:nil afterDelay:0];
 }
 
-- (void)flipCameraButtonPressed:(id)sender
+- (void)flipFlashButtonPressed:(id)sender
 {
-    [self.processor performSelector:@selector(flipCamera) withObject:nil afterDelay:0];
+    [self.processor performSelector:@selector(flipFlash) withObject:nil afterDelay:0];
 }
 
 //--------------------------------------------------------------------------
@@ -922,10 +921,10 @@ parentViewController:(UIViewController*)parentViewController
                     action:nil
                     ];
     
-    id flipCamera = [[UIBarButtonItem alloc]
+    id flipFlash = [[UIBarButtonItem alloc]
                        initWithBarButtonSystemItem:UIBarButtonSystemItemCamera
                        target:(id)self
-                       action:@selector(flipCameraButtonPressed:)
+                       action:@selector(flipFlashButtonPressed:)
                        ];
     
 #if USE_SHUTTER
@@ -935,9 +934,9 @@ parentViewController:(UIViewController*)parentViewController
                         action:@selector(shutterButtonPressed)
                         ];
     
-    toolbar.items = [NSArray arrayWithObjects:flexSpace,cancelButton,flexSpace, flipCamera ,shutterButton,nil];
+    toolbar.items = [NSArray arrayWithObjects:flexSpace,cancelButton,flexSpace, flipFlash ,shutterButton,nil];
 #else
-    toolbar.items = [NSArray arrayWithObjects:flexSpace,cancelButton,flexSpace, flipCamera,nil];
+    toolbar.items = [NSArray arrayWithObjects:flexSpace,cancelButton,flexSpace, flipFlash,nil];
 #endif
     bounds = overlayView.bounds;
     
