@@ -889,6 +889,46 @@ parentViewController:(UIViewController*)parentViewController
     return self.overlayView;
 }
 
+- (NSArray*) getUiButtons{
+    NSMutableArray *uiButtons = [NSMutableArray array];
+    
+    id flexSpace = [[UIBarButtonItem alloc]
+                    initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace
+                    target:nil
+                    action:nil
+                    ];
+    [uiButtons addObject:flexSpace];
+    
+    id cancelButton = [[UIBarButtonItem alloc]
+                       initWithBarButtonSystemItem:UIBarButtonSystemItemCancel
+                       target:(id)self
+                       action:@selector(cancelButtonPressed:)
+                       ];
+    [uiButtons addObject:cancelButton];
+    [uiButtons addObject:flexSpace];
+    
+    AVCaptureDevice *device = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
+    if(device && ([device hasFlash] || [device hasTorch])){
+        id flipFlash = [[UIBarButtonItem alloc]
+                        initWithBarButtonSystemItem:UIBarButtonSystemItemCamera
+                        target:(id)self
+                        action:@selector(flipFlashButtonPressed:)
+                        ];
+        [uiButtons addObject:flipFlash];
+    }
+    
+#if USE_SHUTTER
+    id shutterButton = [[UIBarButtonItem alloc]
+                        initWithBarButtonSystemItem:UIBarButtonSystemItemCamera
+                        target:(id)self
+                        action:@selector(shutterButtonPressed)
+                        ];
+    [uiButtons addObject:shutterButton];
+#endif
+    
+    return uiButtons;
+}
+
 //--------------------------------------------------------------------------
 - (UIView*)buildOverlayView {
     
@@ -906,37 +946,8 @@ parentViewController:(UIViewController*)parentViewController
 
     UIToolbar* toolbar = [[UIToolbar alloc] init];
     toolbar.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleTopMargin;
+    toolbar.items = [self getUiButtons];
     
-    id cancelButton = [[UIBarButtonItem alloc]
-                       initWithBarButtonSystemItem:UIBarButtonSystemItemCancel
-                       target:(id)self
-                       action:@selector(cancelButtonPressed:)
-                       ];
-    
-    
-    id flexSpace = [[UIBarButtonItem alloc]
-                    initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace
-                    target:nil
-                    action:nil
-                    ];
-    
-    id flipFlash = [[UIBarButtonItem alloc]
-                       initWithBarButtonSystemItem:UIBarButtonSystemItemCamera
-                       target:(id)self
-                       action:@selector(flipFlashButtonPressed:)
-                       ];
-    
-#if USE_SHUTTER
-    id shutterButton = [[UIBarButtonItem alloc]
-                        initWithBarButtonSystemItem:UIBarButtonSystemItemCamera
-                        target:(id)self
-                        action:@selector(shutterButtonPressed)
-                        ];
-    
-    toolbar.items = [NSArray arrayWithObjects:flexSpace,cancelButton,flexSpace, flipFlash ,shutterButton,nil];
-#else
-    toolbar.items = [NSArray arrayWithObjects:flexSpace,cancelButton,flexSpace, flipFlash,nil];
-#endif
     bounds = overlayView.bounds;
     
     [toolbar sizeToFit];
