@@ -415,6 +415,15 @@ parentViewController:(UIViewController*)parentViewController
     device = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
     if (!device) return @"unable to obtain video capture device";
     
+    if ([device respondsToSelector:@selector(isAutoFocusRangeRestrictionSupported)] && device.autoFocusRangeRestrictionSupported) {
+        // If we are on an iOS version that supports AutoFocusRangeRestriction and the device supports it
+        // Set the focus range to "near"
+        if ([device lockForConfiguration:nil]) {
+            device.autoFocusRangeRestriction = AVCaptureAutoFocusRangeRestrictionNear;
+            [device unlockForConfiguration];
+        }
+    }
+    
     AVCaptureDeviceInput* input = [AVCaptureDeviceInput deviceInputWithDevice:device error:&error];
     if (!input) return @"unable to obtain video capture device input";
     
